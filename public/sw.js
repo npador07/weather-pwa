@@ -1,8 +1,10 @@
 const CACHE_NAME = "weather-pwa-v1";
 const ASSETS = [
   "/",
-  "/index.html",
-  "/manifest.json"
+  "/manifest.json",
+  "/assets/main.js",
+  "/assets/main.css",
+  // add any other assets from dist
 ];
 
 self.addEventListener("install", event => {
@@ -11,10 +13,12 @@ self.addEventListener("install", event => {
   );
 });
 
+self.addEventListener("activate", event => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    })
+    caches.match(event.request).then(res => res || fetch(event.request))
   );
 });
