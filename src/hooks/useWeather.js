@@ -12,13 +12,14 @@ export default function useWeather(city) {
   useEffect(() => {
     if (!city) return;
 
+    const key = import.meta.env.VITE_WEATHER_API_KEY;
+    const storageKey = `weather-${city.trim().toLowerCase()}`;
+
     async function fetchWeather() {
+      setLoading(true);
+      setError(null);
+
       try {
-        setLoading(true);
-        setError(null);
-
-        const key = import.meta.env.VITE_WEATHER_API_KEY;
-
         const [currentRes, forecastRes] = await Promise.all([
           fetch(`${CURRENT_URL}?q=${city}&units=metric&appid=${key}`),
           fetch(`${FORECAST_URL}?q=${city}&units=metric&appid=${key}`)
@@ -29,13 +30,38 @@ export default function useWeather(city) {
         const currentData = await currentRes.json();
         const forecastData = await forecastRes.json();
 
+        const slicedForecast = forecastData.list.slice(0, 5);
+
         setCurrent(currentData);
-        setForecast(forecastData.list.slice(0, 5));
+        setForecast(slicedForecast);
+
+        // Save to localStorage
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            current: currentData,
+            forecast: slicedForecast
+          })
+        );
+
       } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        console.log("Fetch failed:", err);
+
+        const saved = localStorage.getItem(storageKey);
+
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setCurrent(parsed.current);
+          setForecast(parsed.forecast);
+          setError("Offline — showing last saved data");
+        } else {
+          setCurrent(null);
+          setForecast([]);
+          setError("No internet connection");
+        }
       }
+
+      setLoading(false);
     }
 
     fetchWeather();

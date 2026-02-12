@@ -1,7 +1,7 @@
 const CACHE_NAME = "weather-pwa-v1";
 const ASSETS = [
   "/",
-  "/offline.html",
+  "/offline.html"
 ];
 
 self.addEventListener("install", event => {
@@ -16,11 +16,13 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
-  event.respondWith(
-    caches.match(event.request).then(res => {
-      return res || fetch(event.request).catch(() =>
-        caches.match("/offline.html")
-      );
-    })
-  );
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match("/offline.html"))
+    );
+  } else {
+    event.respondWith(
+      caches.match(event.request).then(res => res || fetch(event.request))
+    );
+  }
 });
